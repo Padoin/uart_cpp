@@ -12,7 +12,7 @@ class CPortaSerial {
 private:
 	HANDLE hPorta;
 	bool aberta;
-	COMMTIMEOUTS commTimeouts;
+	COMMTIMEOUTS CommTimeouts;
 
 	HANDLE _fastcall getHandle();
 
@@ -27,7 +27,7 @@ public:
 	bool _fastcall LerConfigPorta();
 	bool _fastcall SetConfigPorta();
     bool _fastcall GetAberta();
-	// __property bool xAberta = (read = GetAberta);
+	 __property bool xAberta = {read = GetAberta};
 
 };
 

@@ -6,14 +6,40 @@
 // ---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-CPortaSerial::CPortaSerial(char *porta) {
-	hPorta = CreateFileA(porta, GENERIC_READ | GENERIC_WRITE, 0, NULL,
-		OPEN_EXISTING, 0, NULL);
+CPortaSerial::CPortaSerial(char *tPorta)
+{
+   hPorta = CreateFileA(tPorta,
+                        GENERIC_READ | GENERIC_WRITE,
+                        0,
+                        NULL,
+                        OPEN_EXISTING,
+                        0,
+                        NULL
+                        );
 
-	if (hPorta == INVALID_HANDLE_VALUE)
+   if(hPorta == INVALID_HANDLE_VALUE)
 		aberta = false;
-	else
-		aberta = true;
+
+   else
+   {
+	   if(GetCommTimeouts(hPorta, &CommTimeouts) == 0)
+		aberta = false;
+
+        else
+        {
+            CommTimeouts.ReadIntervalTimeout = 10;
+            CommTimeouts.ReadTotalTimeoutMultiplier = 5;
+            CommTimeouts.ReadTotalTimeoutConstant = 100;
+
+            CommTimeouts.WriteTotalTimeoutMultiplier = 5;
+            CommTimeouts.WriteTotalTimeoutConstant = 100;
+        }
+
+         if(SetCommTimeouts(hPorta, &CommTimeouts) == 0)
+		  aberta = false;
+
+		  else aberta = true;
+   }
 }
 
 CPortaSerial::~CPortaSerial() {

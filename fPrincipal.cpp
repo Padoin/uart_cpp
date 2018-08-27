@@ -4,6 +4,7 @@
 #pragma hdrstop
 
 #include "fPrincipal.h"
+#include "uart_cppPCH1.h"
 // ---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
@@ -151,39 +152,86 @@ bool TfrmPrincipal::ConfigurarPorta() {
 
 void __fastcall TfrmPrincipal::btnAbrirPortaClick(TObject *Sender)
 {
+   porta = cmbPorta->Text; /* pegar endereço da porta COM selecionada */
 
-	if(!conexaoEstabelecida()){
-		ShowMessage("porta ja esta aberta");
-		return;
-	}
+   objPorta = new CPortaSerial(porta.c_str());
 
-	char *porta = (char *) cmbPorta->Text.c_str();
-	objPorta = new CPortaSerial(porta);
-	ConfigurarPorta();
+   if(objPorta->xAberta) //se conseguiu abrir a porta
+   {
+       if(ConfigurarPorta()) //configurar velocidade, etc
+       {
+           //definir estado da interface grafica
+           btnAbrirPorta->Enabled = false;
+           btnFecharPorta->Enabled = true;
+           lblStatus->Caption = "Conectado";
+           lblStatus->Font->Color = clGreen;
+           lblStatus->Alignment = taCenter;
+           thread->Active = true; //habilitar leitura da porta
+       }
+       else
+       {
+           ShowMessage("Não foi possivel configurar a porta");
+           delete(objPorta);
+       }
 
+       edtTx->SetFocus();
+   }
+    else
+      ShowMessage("Não foi possivel abrir a porta selecionada");
+}
+
+
+
+void __fastcall TfrmPrincipal::btnFecharPortaClick(TObject *Sender)
+{
+   thread->Active = false;
+   delete(objPorta);
+
+   //questao visual da interface
+   btnFecharPorta->Enabled = false;
+   btnAbrirPorta->Enabled = true;
+   lblStatus->Caption = "Desconectado";
+   lblStatus->Font->Color = clRed;
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TfrmPrincipal::btnEnviarClick(TObject *Sender)
 {
-	if(!conexaoEstabelecida())
-		return;
+   strcpy(outByte,AnsiString(edtTx->Text).c_str());
 
-	char textoEnviar = (char)edtTx->Text.c_str();
-	objPorta->TransmitirByte(textoEnviar);
+    if(btnAbrirPorta->Enabled == false)
+    {
+		thread->Active = false;
+
+		objPorta->TransmitirByte(outByte[0]);
+
+
+        mmoRx->Lines->Add("<" + edtTx->Text.SubString(0,1) + ">");
+
+        /* adicionar caracter enviado */
+       //    mmoRx->Text = mmoRx->Text + "<" + edtTx->Text.SubString(0,1) + ">";
+
+        thread->Active = true;
+    }
+
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TfrmPrincipal::threadOnRun(TIdThreadComponent *Sender)
 {
-    Sleep(1000);
+	Sleep(1000);
 
-	if(!conexaoEstabelecida())
-		return;
+	//if(!conexaoEstabelecida())
+	  //	return;
 
-	// char textoRecebido = objPorta->ReceberByte();
-	char textoRecebido = 'c';
-	mmoRx->Lines->Add(textoRecebido);
+
+	 textoRecebido = objPorta->ReceberByte();
+	 auxiliar = textoRecebido;
+	 if(auxiliar.Length() >= 1 && auxiliar !="0")
+	 {
+        mmoRx->Lines->Add(textoRecebido);
+		Sleep(2000);
+	 }
 }
 //---------------------------------------------------------------------------
 
@@ -193,9 +241,14 @@ void __fastcall TfrmPrincipal::btnLimparRxClick(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TfrmPrincipal::btnFecharPortaClick(TObject *Sender)
+
+void __fastcall TfrmPrincipal::FormClose(TObject *Sender, TCloseAction &Action)
 {
-    delete objPorta;
+//prevencao de segurança caso fechar a aplicaçao sem
+   //fechar a porta
+   if(thread->Active)
+	 btnFecharPortaClick(this);
 }
 //---------------------------------------------------------------------------
+
 

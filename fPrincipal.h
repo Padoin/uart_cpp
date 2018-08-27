@@ -45,6 +45,7 @@ __published: // IDE-managed Components
 	void __fastcall threadOnRun(TIdThreadComponent *Sender);
 	void __fastcall btnLimparRxClick(TObject *Sender);
 	void __fastcall btnFecharPortaClick(TObject *Sender);
+	void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
 
 	// void __fastcall btnListarPortasClick(TObject *Sender);
 	// void __fastcall btnAbrirPortaClick(TObject *Sender);
@@ -57,7 +58,8 @@ __published: // IDE-managed Components
 private: // User declarations
 
 	CPortaSerial *objPorta;
-
+	 unsigned char textoRecebido;
+	 AnsiString auxiliar;
 	AnsiString porta;
 	AnsiString inByte;
 	unsigned char byteRec;
